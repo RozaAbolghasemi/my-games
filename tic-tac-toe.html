@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1a1a2e; font-family: 'Segoe UI', sans-serif; color: #eee; }
+  .container { text-align: center; }
+  h1 { font-size: 2rem; margin-bottom: 10px; }
+  #status { font-size: 1.2rem; margin-bottom: 20px; min-height: 1.5em; }
+  .board { display: grid; grid-template-columns: repeat(3, 120px); grid-template-rows: repeat(3, 120px); gap: 6px; margin: 0 auto 20px; }
+  .cell { background: #16213e; border: 2px solid #0f3460; border-radius: 8px; font-size: 3rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+  .cell:hover { background: #1a2a50; }
+  .cell.x { color: #e94560; }
+  .cell.o { color: #53d8fb; }
+  .cell.win { background: #0f3460; animation: pulse 0.5s ease-in-out 2; }
+  @keyframes pulse { 50% { transform: scale(1.08); } }
+  button { padding: 10px 30px; font-size: 1rem; border: none; border-radius: 6px; background: #e94560; color: #fff; cursor: pointer; }
+  button:hover { background: #c73652; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Tic Tac Toe</h1>
+  <div id="status">X's turn</div>
+  <div class="board" id="board"></div>
+  <button onclick="reset()">New Game</button>
+</div>
+<script>
+  const board = document.getElementById('board');
+  const status = document.getElementById('status');
+  let cells, gameOver;
+
+  const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  function reset() {
+    cells = Array(9).fill('');
+    gameOver = false;
+    status.textContent = "Your turn (X)";
+    board.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('button');
+      cell.className = 'cell';
+      cell.addEventListener('click', () => play(i));
+      board.appendChild(cell);
+    }
+  }
+
+  function checkWin(player) {
+    return wins.find(w => w.every(j => cells[j] === player));
+  }
+
+  function makeMove(i, player) {
+    cells[i] = player;
+    const cell = board.children[i];
+    cell.textContent = player;
+    cell.classList.add(player.toLowerCase());
+  }
+
+  function minimax(isMax) {
+    const ai = 'O', hu = 'X';
+    if (checkWin(ai)) return 10;
+    if (checkWin(hu)) return -10;
+    const empty = cells.map((c, i) => c === '' ? i : null).filter(i => i !== null);
+    if (empty.length === 0) return 0;
+
+    if (isMax) {
+      let best = -Infinity;
+      for (const i of empty) {
+        cells[i] = ai;
+        best = Math.max(best, minimax(false));
+        cells[i] = '';
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const i of empty) {
+        cells[i] = hu;
+        best = Math.min(best, minimax(true));
+        cells[i] = '';
+      }
+      return best;
+    }
+  }
+
+  function aiMove() {
+    const empty = cells.map((c, i) => c === '' ? i : null).filter(i => i !== null);
+    let bestScore = -Infinity, bestIdx = empty[0];
+    for (const i of empty) {
+      cells[i] = 'O';
+      const score = minimax(false);
+      cells[i] = '';
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
+    }
+    makeMove(bestIdx, 'O');
+
+    const win = checkWin('O');
+    if (win) {
+      gameOver = true;
+      status.textContent = "Computer wins!";
+      win.forEach(j => board.children[j].classList.add('win'));
+      return;
+    }
+    if (cells.every(c => c)) {
+      gameOver = true;
+      status.textContent = "It's a draw!";
+      return;
+    }
+    status.textContent = "Your turn (X)";
+  }
+
+  function play(i) {
+    if (cells[i] || gameOver) return;
+    makeMove(i, 'X');
+
+    const win = checkWin('X');
+    if (win) {
+      gameOver = true;
+      status.textContent = "You win!";
+      win.forEach(j => board.children[j].classList.add('win'));
+      return;
+    }
+    if (cells.every(c => c)) {
+      gameOver = true;
+      status.textContent = "It's a draw!";
+      return;
+    }
+    status.textContent = "Computer thinking...";
+    setTimeout(aiMove, 300);
+  }
+
+  reset();
+</script>
+</body>
+</html>
