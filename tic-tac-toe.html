@@ -59,42 +59,31 @@
     cell.classList.add(player.toLowerCase());
   }
 
-  function minimax(isMax) {
-    const ai = 'O', hu = 'X';
-    if (checkWin(ai)) return 10;
-    if (checkWin(hu)) return -10;
+  function findWinningMove(player) {
     const empty = cells.map((c, i) => c === '' ? i : null).filter(i => i !== null);
-    if (empty.length === 0) return 0;
-
-    if (isMax) {
-      let best = -Infinity;
-      for (const i of empty) {
-        cells[i] = ai;
-        best = Math.max(best, minimax(false));
-        cells[i] = '';
-      }
-      return best;
-    } else {
-      let best = Infinity;
-      for (const i of empty) {
-        cells[i] = hu;
-        best = Math.min(best, minimax(true));
-        cells[i] = '';
-      }
-      return best;
+    for (const i of empty) {
+      cells[i] = player;
+      if (checkWin(player)) { cells[i] = ''; return i; }
+      cells[i] = '';
     }
+    return -1;
   }
 
   function aiMove() {
     const empty = cells.map((c, i) => c === '' ? i : null).filter(i => i !== null);
-    let bestScore = -Infinity, bestIdx = empty[0];
-    for (const i of empty) {
-      cells[i] = 'O';
-      const score = minimax(false);
-      cells[i] = '';
-      if (score > bestScore) { bestScore = score; bestIdx = i; }
+
+    // Always take a winning move if available
+    let move = findWinningMove('O');
+    if (move !== -1) { makeMove(move, 'O'); }
+    // 40% chance to block player's winning move
+    else if (Math.random() < 0.4 && (move = findWinningMove('X')) !== -1) {
+      makeMove(move, 'O');
     }
-    makeMove(bestIdx, 'O');
+    // Otherwise pick a random empty cell
+    else {
+      move = empty[Math.floor(Math.random() * empty.length)];
+      makeMove(move, 'O');
+    }
 
     const win = checkWin('O');
     if (win) {
